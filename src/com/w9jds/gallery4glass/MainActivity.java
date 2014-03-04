@@ -2,13 +2,13 @@ package com.w9jds.gallery4glass;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.animation.Animator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
@@ -27,43 +27,36 @@ import android.widget.TextView;
 
 import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardScrollView;
-//import com.google.api.client.extensions.android.http.AndroidHttp;
-//import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-//import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
-//import com.google.api.client.http.FileContent;
-//import com.google.api.client.json.gson.GsonFactory;
-//import com.google.api.services.drive.Drive;
-//import com.google.api.services.drive.DriveScopes;
-//import com.google.api.services.drive.model.File;
-import com.google.gson.JsonObject;
 import com.w9jds.gallery4glass.Adapters.csaAdapter;
-import com.w9jds.gallery4glass.Classes.StorageApplication;
-import com.w9jds.gallery4glass.Classes.StorageService;
+import com.w9jds.gallery4glass.Classes.AuthPreferences;
 import com.w9jds.gallery4glass.Classes.cPaths;
 import com.w9jds.gallery4glass.Widget.SliderView;
 
-import java.io.DataOutputStream;
-import java.io.FileInputStream;
-import java.net.HttpURLConnection;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 @SuppressLint("DefaultLocale")
 public class MainActivity extends Activity
 {
+    private static final int AUTHORIZATION_CODE = 1993;
+    private static final int ACCOUNT_CODE = 1601;
+
     private final String CAMERA_IMAGE_BUCKET_NAME = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString() + "/Camera";
     private final String CAMERA_IMAGE_BUCKET_ID = getBucketId(CAMERA_IMAGE_BUCKET_NAME);
 
     private ConnectivityManager mcmCon;
     private AudioManager maManager;
 
-    //create member variables for Azure
-    private StorageService mStorageService;
-
-//    //create member variables for google drive
-//    private Drive mdService;
-//    private GoogleAccountCredential mgacCredential;
+    private AuthPreferences authPreferences;
 
     //custom adapter
     private csaAdapter mcvAdapter;
@@ -78,23 +71,18 @@ public class MainActivity extends Activity
         mcmCon = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         maManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
+        authPreferences = new AuthPreferences(this);
+
         CreatePictureView();
     }
 
     private void CreatePictureView()
     {
-        if (mcmCon.getActiveNetworkInfo().isConnected())
-        {
-            StorageApplication myApp = (StorageApplication) getApplication();
-            mStorageService = myApp.getStorageService();
-        }
 
         //get all the images from the camera folder (paths)
         mcpPaths.setImagePaths(getCameraImages());
-        //sort the paths of pictures
-//        sortPaths(mcpPaths.getImagePaths());
-        Collections.reverse(mcpPaths.getImagePaths());
 
+        Collections.reverse(mcpPaths.getImagePaths());
         //create a new card scroll viewer for this context
         CardScrollView csvCardsView = new CardScrollView(this);
         //create a new adapter for the scroll viewer
@@ -127,9 +115,6 @@ public class MainActivity extends Activity
     @Override
     protected void onResume()
     {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("blob.created");
-        registerReceiver(receiver, filter);
         super.onResume();
     }
 
@@ -139,7 +124,6 @@ public class MainActivity extends Activity
     @Override
     protected void onPause()
     {
-        unregisterReceiver(receiver);
         super.onPause();
     }
 
@@ -184,11 +168,66 @@ public class MainActivity extends Activity
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        if (requestCode == 1)
+        if (resultCode == RESULT_OK)
         {
-            if (resultCode == RESULT_OK)
+            if (requestCode == 1)
                 CreatePictureView();
+
+            else if (requestCode == AUTHORIZATION_CODE)
+                requestToken();
+
+            else if (requestCode == ACCOUNT_CODE)
+            {
+                String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                authPreferences.setUser(accountName);
+
+                // invalidate old tokens which might be cached. we want a fresh
+                // one, which is guaranteed to work
+                invalidateToken();
+
+                requestToken();
+            }
+
         }
+
+    }
+
+    private void requestToken()
+    {
+//        final List<String> SCOPES = Arrays.asList("https://www.googleapis.com/auth/drive.file");
+
+        AccountManager accountManager = AccountManager.get(this);
+        Account userAccount = null;
+        String user = authPreferences.getUser();
+        for (Account account : accountManager.getAccountsByType("com.google"))
+        {
+            if (account.name.equals(user))
+            {
+                userAccount = account;
+                break;
+            }
+        }
+
+        accountManager.getAuthToken(userAccount, "oauth2:https://www.googleapis.com/auth/drive.file", null, this, new OnTokenAcquired(), null);
+    }
+
+    private void invalidateToken()
+    {
+        AccountManager accountManager = AccountManager.get(this);
+        accountManager.invalidateAuthToken("com.google", authPreferences.getToken());
+
+        authPreferences.setToken(null);
+    }
+
+    private void createDriveCall() throws IOException
+    {
+//        String[] saPath = mcpPaths.getCurrentPositionPath().split("/");
+
+//        Ion.with(this, "http://glass-mirror-service.appspot.com/PosttoDrive")
+//                .setHeader("token", ServiceEncryption.encrypt(authPreferences.getToken()))
+//                .setFileBody(new File(mcpPaths.getCurrentPositionPath()));
+
+        (new GetCertificate()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
@@ -214,18 +253,6 @@ public class MainActivity extends Activity
 
                 return true;
 
-//            case R.id.share_menu_item:
-//                    TimelineNano.Entity localEntity = EntityMenuItem.ShareTargetMenuItem.this.getEntity();
-//                    Uri localUri = TimelineProvider.TIMELINE_URI.buildUpon().appendPath(EntityMenuItem.ShareTargetMenuItem.this.timelineItem.getId()).build();
-//                    Intent localIntent = ShareActivityHelper.getBaseShareActivityIntent(paramVoiceMenuEnvironment.getContext(), localUri);
-//                    localIntent.putExtra("item_id", new TimelineItemId(EntityMenuItem.ShareTargetMenuItem.this.timelineItem));
-//                    localIntent.putExtra("update_timeline_share", true);
-//                    localIntent.putExtra("voice_annotation", Ints.contains(EntityMenuItem.ShareTargetMenuItem.this.timelineItem.sharingFeature, 0));
-//                    localIntent.putExtra("chosen_share_target", MessageNano.toByteArray(localEntity));
-//                    localIntent.putExtra("animateToTimelineItem", true);
-//                    paramVoiceMenuEnvironment.getContext().startActivityForResult(localIntent, 1);
-//                return true;
-
             case R.id.delete_menu_item:
                 //set the text as deleting
                 setContentView(R.layout.menu_layout);
@@ -245,7 +272,7 @@ public class MainActivity extends Activity
                     public void onAnimationEnd(Animator animation)
                     {
                         //pull the file from the path of the selected item
-                        java.io.File fPic = new java.io.File(mcpPaths.getCurrentPositionPath());
+                        File fPic = new File(mcpPaths.getCurrentPositionPath());
                         //delete the image
                         fPic.delete();
                         //refresh the folder
@@ -286,63 +313,33 @@ public class MainActivity extends Activity
 
                 return true;
 
-//            case R.id.upload_menu_item:
-//
-//                if (mcmCon.getActiveNetworkInfo().isConnected())
-//                {
-//                    //get google account credentials and store to member variable
-//                    mgacCredential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));
-//                    //get a list of all the accounts on the device
-//                    Account[] myAccounts = AccountManager.get(this).getAccounts();
-//                    //for each account
-//                    for (int i = 0; i < myAccounts.length; i++) {
-//                        //if the account type is google
-//                        if (myAccounts[i].type.equals("com.google"))
-//                            //set this as the selected Account
-//                            mgacCredential.setSelectedAccountName(myAccounts[i].name);
-//                    }
-//                    //get the drive service
-//                    mdService = getDriveService(mgacCredential);
-//                    //save the selected item to google drive
-//                    saveFileToDrive(mcpPaths.getCurrentPositionPath());
-//                }
-//
-//                return true;
-
-            case R.id.uploadphone_menu_item:
+            case R.id.upload_menu_item:
 
                 if (mcmCon.getActiveNetworkInfo().isConnected())
                 {
-                    setContentView(R.layout.menu_layout);
-
-                    svProgress = (SliderView)findViewById(R.id.slider);
-
-                    svProgress.startIndeterminate();
-
-                    ((ImageView)findViewById(R.id.icon)).setImageResource(R.drawable.ic_mobile_phone_50);
-                    ((TextView)findViewById(R.id.label)).setText(getString(R.string.uploading_label));
-
-                    String sContainer = "";
-                    String[] saImage = mcpPaths.getCurrentPositionPath().split("/|\\.");
-
-                    Account[] myAccounts = AccountManager.get(this).getAccounts();
+                    //get google account credentials and store to member variable
+                    AccountManager amManager = AccountManager.get(this);
+                    //get a list of all the accounts on the device
+                    Account[] myAccounts = amManager.getAccounts();
                     //for each account
                     for (int i = 0; i < myAccounts.length; i++)
                     {
                         //if the account type is google
                         if (myAccounts[i].type.equals("com.google"))
                         {
-                            //set this as the selected Account
-                            String[] saAccount = myAccounts[i].name.split("@|\\.");
-                            sContainer = saAccount[0] + saAccount[1] + saAccount[2];
+//                            //create new encryptor
+//                            ServiceEncryption seEncryption = new ServiceEncryption();
+//                            //encrypt and save the password
+//                            String sPassword = seEncryption.encrypt(amManager.getPassword(myAccounts[i]));
+//                            //encrypt and save the email
+//                            String sEmail = seEncryption.encrypt(myAccounts[i].name);
+
+                            authPreferences.setUser(myAccounts[i].name);
+                            requestToken();
                         }
                     }
-
-                    mStorageService.addContainer(sContainer, false);
-                    mStorageService.getSasForNewBlob(sContainer, saImage[saImage.length - 2]);
                 }
-                else
-                    maManager.playSoundEffect(Sounds.DISALLOWED);
+
                 return true;
 
             default:
@@ -350,147 +347,79 @@ public class MainActivity extends Activity
         }
     }
 
-    /***
-     * Broadcast receiver handles blobs being loaded or a new blob being created
-     */
-    private BroadcastReceiver receiver = new BroadcastReceiver()
+    private class OnTokenAcquired implements AccountManagerCallback<Bundle>
     {
-        public void onReceive(Context context, Intent intent)
+
+        @Override
+        public void run(AccountManagerFuture<Bundle> result)
         {
-            String intentAction = intent.getAction();
-
-            if (intentAction.equals("blob.created"))
+            try
             {
-                //If a blob has been created, upload the image
-                JsonObject blob = mStorageService.getLoadedBlob();
-                String sasUrl = blob.getAsJsonPrimitive("sasUrl").toString();
-                (new ImageUploaderTask(sasUrl, mcpPaths.getMainPosition(), mcpPaths.getImagePaths())).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                Bundle bundle = result.getResult();
 
+                Intent launch = (Intent) bundle.get(AccountManager.KEY_INTENT);
+
+                if (launch != null)
+                    startActivityForResult(launch, AUTHORIZATION_CODE);
+
+                else
+                {
+                    String token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
+
+                    authPreferences.setToken(token);
+
+                    createDriveCall();
+                }
+            }
+
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
             }
         }
-    };
+    }
 
-    public class ImageUploaderTask extends AsyncTask<Void, Void, Boolean>
+    public class GetCertificate extends AsyncTask<Void, Void, Boolean>
     {
-        private String mUrl;
-        private ArrayList<String> mlsPaths;
-        private int miPosition;
-
-        public ImageUploaderTask(String url, int iPosition, ArrayList<String> lsPath)
-        {
-            mUrl = url;
-            miPosition = iPosition;
-            mlsPaths = lsPath;
-        }
 
         @Override
         protected Boolean doInBackground(Void... params)
         {
             try
             {
-                java.io.File fImage = new java.io.File(mlsPaths.get(miPosition));
-                FileInputStream fisStream = new FileInputStream(fImage);
-                byte[] byteArray = new byte[(int)fImage.length()];
-                fisStream.read(byteArray);
+                String keyStoreType = KeyStore.getDefaultType();
+                Log.d("GetCertMain", keyStoreType);
+                KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+                Log.d("GetCertMain", "initialize the keystore");
+                String algorithm = TrustManagerFactory.getDefaultAlgorithm();
+                Log.d("GetCertMain", algorithm);
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
+                Log.d("GetCertMain", tmf.toString());
+                tmf.init(keyStore);
 
-                // Post our image data (byte array) to the server
-                URL url = new URL(mUrl.replace("\"", ""));
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("PUT");
-                urlConnection.addRequestProperty("Content-Type", "image/jpeg");
-                urlConnection.setRequestProperty("Content-Length", ""+ byteArray.length);
-                // Write image data to server
-                DataOutputStream wr = new DataOutputStream(urlConnection.getOutputStream());
-                wr.write(byteArray);
-                wr.flush();
-                wr.close();
-                int response = urlConnection.getResponseCode();
-                urlConnection.disconnect();
-                //If we successfully uploaded, return true
-                if (response == 201 && urlConnection.getResponseMessage().equals("Created"))
-                    return true;
+                SSLContext context = SSLContext.getInstance("TLS");
+                context.init(null, tmf.getTrustManagers(), null);
+
+                URL url = new URL("https://glass-mirror-service.appspot.com/PosttoDrive");
+                HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
+                urlConnection.setSSLSocketFactory(context.getSocketFactory());
+                InputStream in = urlConnection.getInputStream();
+
+//                SocketFactory sfFactory = SSLSocketFactory.getDefault();
+//                SSLSocket Socket = (SSLSocket) sfFactory.createSocket("glass-mirror-service.appspot.com/PosttoDrive", 443);
+//                HostnameVerifier hvVerify = HttpsURLConnection.getDefaultHostnameVerifier();
+//                SSLSession sslSession = Socket.getSession();
+
+            }
+            catch(Exception ex)
+            {
+                ex.getCause().printStackTrace();
 
             }
 
-            catch (Exception ex)
-            {
-                Log.e("Gallery4GlassImageUploadTask", ex.getMessage());
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean uploaded)
-        {
-            if (uploaded)
-            {
-                setContentView(R.layout.menu_layout);
-                ((ImageView)findViewById(R.id.icon)).setImageResource(R.drawable.ic_done_50);
-                ((TextView)findViewById(R.id.label)).setText(getString(R.string.uploaded_label));
-
-                maManager.playSoundEffect(Sounds.SUCCESS);
-            }
-
-            new Handler().postDelayed(new Runnable()
-            {
-                public void run()
-                {
-                    CreatePictureView();
-                }
-            }, 1000);
+            return true;
         }
     }
-
-//    private void saveFileToDrive(String sPath)
-//    {
-//        final String msPath = sPath;
-//
-//        Thread t = new Thread(new Runnable()
-//        {
-//            @Override
-//            public void run()
-//            {
-//                try
-//                {
-//                    // File's binary content
-//                    java.io.File fImage = new java.io.File(msPath);
-//                    FileContent fcContent = new FileContent("image/jpeg", fImage);
-//
-//                    // File's metadata.
-//                    File gdfBody = new File();
-//                    gdfBody.setTitle(fImage.getName());
-//                    gdfBody.setMimeType("image/jpeg");
-//
-//                    File gdfFile = mdService.files().insert(gdfBody, fcContent).execute();
-//                    if (gdfFile != null)
-//                    {
-//                        Log.d("GlassShareUploadTask", "Uploaded");
-//                    }
-//
-//                }
-//                catch (UserRecoverableAuthIOException e) {
-//                    Log.d("GlassShareUploadTask", e.toString());
-////                    startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
-//                }
-//                catch (IOException e) {
-//                    Log.d("GlassShareUploadTask", e.toString());
-////                    e.printStackTrace();
-//                }
-//                catch (Exception e) {
-//                    Log.d("GlassShareUploadTask", e.toString());
-//                }
-//            }
-//        });
-//        t.start();
-//
-//    }
-//
-//    private Drive getDriveService(GoogleAccountCredential credential)
-//    {
-//        return new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
-//    }
-
 }
 
 

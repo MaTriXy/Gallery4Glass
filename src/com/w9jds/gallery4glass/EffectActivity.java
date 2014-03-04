@@ -42,7 +42,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-
 public class EffectActivity extends Activity
 {
 
@@ -337,69 +336,6 @@ public class EffectActivity extends Activity
             return bPixelize;
 
         }
-
-//        public Bitmap toPosterize(String sPath)
-//        {
-//            Mat mOriginal = new Mat();
-//
-//            Utils.bitmapToMat(BitmapFactory.decodeFile(sPath), mOriginal);
-//
-//            Mat mIntermediateMat = new Mat();
-//
-//            Imgproc.Canny(mOriginal, mIntermediateMat, 80, 90);
-//            mOriginal.setTo(new Scalar(0, 0, 0, 255), mIntermediateMat);
-//            Core.convertScaleAbs(mOriginal, mIntermediateMat, 1./16, 0);
-//            Core.convertScaleAbs(mIntermediateMat, mOriginal, 16, 0);
-//
-//            Bitmap bPosterize = Bitmap.createBitmap(mOriginal.width(), mOriginal.height(), Bitmap.Config.RGB_565);
-//
-//            Utils.matToBitmap(mOriginal, bPosterize);
-//
-//            return bPosterize;
-//        }
-
-//        public Bitmap toHist(String sPath)
-//        {
-//            Mat hist = new Mat();
-//            int thikness = (int) (sizeRgba.width / (mHistSizeNum + 10) / 5);
-//            if(thikness > 5) thikness = 5;
-//            int offset = (int) ((sizeRgba.width - (5*mHistSizeNum + 4*10)*thikness)/2);
-//            // RGB
-//            for(int c=0; c<3; c++) {
-//                Imgproc.calcHist(Arrays.asList(rgba), mChannels[c], mMat0, hist, mHistSize, mRanges);
-//                Core.normalize(hist, hist, sizeRgba.height/2, 0, Core.NORM_INF);
-//                hist.get(0, 0, mBuff);
-//                for(int h=0; h<mHistSizeNum; h++) {
-//                    mP1.x = mP2.x = offset + (c * (mHistSizeNum + 10) + h) * thikness;
-//                    mP1.y = sizeRgba.height-1;
-//                    mP2.y = mP1.y - 2 - (int)mBuff[h];
-//                    Core.line(rgba, mP1, mP2, mColorsRGB[c], thikness);
-//                }
-//            }
-//            // Value and Hue
-//            Imgproc.cvtColor(rgba, mIntermediateMat, Imgproc.COLOR_RGB2HSV_FULL);
-//            // Value
-//            Imgproc.calcHist(Arrays.asList(mIntermediateMat), mChannels[2], mMat0, hist, mHistSize, mRanges);
-//            Core.normalize(hist, hist, sizeRgba.height/2, 0, Core.NORM_INF);
-//            hist.get(0, 0, mBuff);
-//            for(int h=0; h<mHistSizeNum; h++) {
-//                mP1.x = mP2.x = offset + (3 * (mHistSizeNum + 10) + h) * thikness;
-//                mP1.y = sizeRgba.height-1;
-//                mP2.y = mP1.y - 2 - (int)mBuff[h];
-//                Core.line(rgba, mP1, mP2, mWhilte, thikness);
-//            }
-//            // Hue
-//            Imgproc.calcHist(Arrays.asList(mIntermediateMat), mChannels[0], mMat0, hist, mHistSize, mRanges);
-//            Core.normalize(hist, hist, sizeRgba.height/2, 0, Core.NORM_INF);
-//            hist.get(0, 0, mBuff);
-//            for(int h=0; h<mHistSizeNum; h++) {
-//                mP1.x = mP2.x = offset + (4 * (mHistSizeNum + 10) + h) * thikness;
-//                mP1.y = sizeRgba.height-1;
-//                mP2.y = mP1.y - 2 - (int)mBuff[h];
-//                Core.line(rgba, mP1, mP2, mColorsHue[h], thikness);
-//            }
-//
-//        }
 
         @Override
         protected void onPostExecute(Boolean uploaded)

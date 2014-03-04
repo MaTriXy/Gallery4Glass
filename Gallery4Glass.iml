@@ -18,7 +18,34 @@
     <orderEntry type="library" name="google-play-services" level="project" />
     <orderEntry type="library" name="gson-2.2.2" level="project" />
     <orderEntry type="library" name="mobileservices-1.1.0" level="project" />
-    <orderEntry type="module" module-name="OpenCV-2.4.8" />
+    <orderEntry type="module" module-name="OpenCV Library - 2.4.8" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/ion-1.2.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/androidasync-1.2.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/google-http-client-1.17.0-rc.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 

@@ -15,10 +15,10 @@
         android:title="@string/vignette_label"
         android:icon="@drawable/ic_vignette_medium"/>
 
-    <!--<item-->
-        <!--android:id="@+id/upload_menu_item"-->
-        <!--android:title="@string/drive_label"-->
-        <!--android:icon="@drawable/ic_drive_badge_48"/>-->
+    <item
+        android:id="@+id/upload_menu_item"
+        android:title="@string/drive_label"
+        android:icon="@drawable/ic_drive_badge_48"/>
 
     <!--<item-->
         <!--android:id="@+id/share_menu_item"-->
@@ -30,10 +30,10 @@
         android:title="@string/effects_label"
         android:icon="@drawable/ic_effects_50"/>
 
-    <item
-        android:id="@+id/uploadphone_menu_item"
-        android:title="@string/upload_label"
-        android:icon="@drawable/ic_mobile_phone_50"/>
+    <!--<item-->
+        <!--android:id="@+id/uploadphone_menu_item"-->
+        <!--android:title="@string/upload_label"-->
+        <!--android:icon="@drawable/ic_mobile_phone_50"/>-->
 
     <item
         android:id="@+id/delete_menu_item"
