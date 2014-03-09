@@ -29,12 +29,6 @@ import android.widget.TextView;
 
 import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardScrollView;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.MetadataChangeSet;
 import com.w9jds.gallery4glass.Adapters.csaAdapter;
 import com.w9jds.gallery4glass.Classes.AuthPreferences;
 import com.w9jds.gallery4glass.Classes.ServiceHttpClient;
@@ -47,17 +41,13 @@ import org.apache.http.client.methods.HttpPost;
 //import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class MainActivity extends Activity
 {
     private static final int AUTHORIZATION_CODE = 1993;
-
 
     private final String CAMERA_IMAGE_BUCKET_NAME = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString() + "/Camera";
     private final String CAMERA_IMAGE_BUCKET_ID = getBucketId(CAMERA_IMAGE_BUCKET_NAME);
@@ -188,21 +178,8 @@ public class MainActivity extends Activity
 
                     break;
 
-                case AUTHORIZATION_CODE:
-//                    requestToken();
-
-                    break;
-
-//                case ACCOUNT_CODE:
-//
-//                    String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-//                    mauthPreferences.setUser(accountName);
-//
-//                    // invalidate old tokens which might be cached. we want a fresh
-//                    // one, which is guaranteed to work
-//                    invalidateToken();
-//
-//                    requestToken();
+//                case AUTHORIZATION_CODE:
+////                    requestToken();
 //
 //                    break;
             }
@@ -428,7 +405,7 @@ public class MainActivity extends Activity
             {
                 DefaultHttpClient dhcClient = new ServiceHttpClient(getApplicationContext());
 
-                HttpPost hpPost = new HttpPost("http://10.1.10.13:8888/PosttoDrive");
+                HttpPost hpPost = new HttpPost("");
                 hpPost.addHeader("Content-Type", "image/jpeg");
                 hpPost.addHeader("Authorization", "Bearer " + mauthPreferences.getToken());
 
