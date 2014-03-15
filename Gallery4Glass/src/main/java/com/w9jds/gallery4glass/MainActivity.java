@@ -8,10 +8,8 @@ import android.animation.Animator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
@@ -20,7 +18,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
@@ -36,9 +33,9 @@ import com.w9jds.gallery4glass.Classes.cPaths;
 import com.w9jds.gallery4glass.Widget.SliderView;
 
 import org.apache.http.client.methods.HttpPost;
-//import org.apache.http.entity.mime.HttpMultipartMode;
-//import org.apache.http.entity.mime.MultipartEntityBuilder;
-//import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.File;
@@ -405,27 +402,27 @@ public class MainActivity extends Activity
             {
                 DefaultHttpClient dhcClient = new ServiceHttpClient(getApplicationContext());
 
-                HttpPost hpPost = new HttpPost("");
+                HttpPost hpPost = new HttpPost("http://10.1.10.13:4443/PosttoDrive");
                 hpPost.addHeader("Content-Type", "image/jpeg");
                 hpPost.addHeader("Authorization", "Bearer " + mauthPreferences.getToken());
 
-//                MultipartEntityBuilder meBuilder = MultipartEntityBuilder.create();
-//
-//                meBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-//
-////                MultipartEntity meEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-//
-////                ByteArrayOutputStream bosStream = new ByteArrayOutputStream();
-////                BitmapFactory.decodeFile(mcpPaths.getCurrentPositionPath()).compress(Bitmap.CompressFormat.JPEG, 100, bosStream);
-////
-////                String[] saPath = mcpPaths.getCurrentPositionPath().split("/");
-////
-////                meEntity.addPart("image", new ByteArrayBody(bosStream.toByteArray(), saPath[saPath.length - 1]));
-//
-//                meBuilder.addPart("image", new FileBody(new File(mcpPaths.getCurrentPositionPath())));
-//
-//                hpPost.setEntity(meBuilder.build());
-//                dhcClient.execute(hpPost);
+                MultipartEntityBuilder meBuilder = MultipartEntityBuilder.create();
+
+                meBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+
+//                MultipartEntity meEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+
+//                ByteArrayOutputStream bosStream = new ByteArrayOutputStream();
+//                BitmapFactory.decodeFile(mcpPaths.getCurrentPositionPath()).compress(Bitmap.CompressFormat.JPEG, 100, bosStream);
+
+//                String[] saPath = mcpPaths.getCurrentPositionPath().split("/");
+
+//                meEntity.addPart("image", new ByteArrayBody(bosStream.toByteArray(), saPath[saPath.length - 1]));
+
+                meBuilder.addPart("image", new FileBody(new File(mcpPaths.getCurrentPositionPath())));
+
+                hpPost.setEntity(meBuilder.build());
+                dhcClient.execute(hpPost);
 
             }
             catch(Exception ex)

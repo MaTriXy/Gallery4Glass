@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="gson-2.2.2">
+  <library name="httpmime-4.3.3">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/Gallery4Glass/libs/gson-2.2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Gallery4Glass/libs/httpmime-4.3.3.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
